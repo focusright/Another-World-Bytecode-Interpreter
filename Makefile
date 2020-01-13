@@ -1,9 +1,9 @@
 
-SDL_CFLAGS = `sdl-config --cflags`
-SDL_LIBS = `sdl-config --libs`
+SDL_CFLAGS = `sdl2-config --cflags`
+SDL_LIBS = `sdl2-config --libs` -lSDL2_mixer -framework OpenGL -framework GLUT
 
 #comment this line and uncomment the one below it to force detection
-DEFINES:= -DAUTO_DETECT_PLATFORM
+DEFINES:= -DAUTO_DETECT_PLATFORM -DBYPASS_PROTECTION
 #DEFINES = -DSYS_LITTLE_ENDIAN
 
 CXX = g++
@@ -21,6 +21,7 @@ DEPS = $(SRCS:.cpp=.d)
 
 game: $(OBJS)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJS) $(SDL_LIBS) -lz
+	cp game ./build
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -MMD -c $< -o $*.o

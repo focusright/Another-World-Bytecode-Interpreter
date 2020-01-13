@@ -38,6 +38,10 @@ struct SDLStub : System {
 	
 	static const Scaler _scalers[];
 
+	SDL_Window * _window;
+	SDL_Renderer * _renderer;
+	SDL_Texture * _texture;
+
 	uint8_t *_offscreen;
 	SDL_Surface *_screen;
 	SDL_Surface *_sclscreen;
@@ -89,15 +93,15 @@ const SDLStub::Scaler SDLStub::_scalers[] = {
 
 void SDLStub::init(const char *title) {
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER);
-	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 	SDL_ShowCursor(SDL_DISABLE);
-	SDL_WM_SetCaption(title, NULL);
+	//SDL_WM_SetCaption(title, NULL);
 
 	int x, y; 
 
 	SDL_GetMouseState( &x,&y ); 
 	SDL_ShowCursor( SDL_ENABLE ); 
-	SDL_WarpMouse( x, y ); 
+	//SDL_WarpMouse( x, y ); 
 
 	memset(&input, 0, sizeof(input));
 	_offscreen = (uint8_t *)malloc(SCREEN_W * SCREEN_H * 2);
@@ -160,7 +164,12 @@ void SDLStub::copyRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 	(this->*_scalers[_scaler].proc)((uint16_t *)_sclscreen->pixels, _sclscreen->pitch, (uint16_t *)_offscreen, SCREEN_W, SCREEN_W, SCREEN_H);
 	SDL_UnlockSurface(_sclscreen);
 	SDL_BlitSurface(_sclscreen, NULL, _screen, NULL);
-	SDL_UpdateRect(_screen, 0, 0, 0, 0);
+	//SDL_UpdateRect(_screen, 0, 0, 0, 0);
+
+    SDL_UpdateTexture(_texture, NULL, _screen->pixels, _screen->pitch);
+    SDL_RenderClear(_renderer);
+    SDL_RenderCopy(_renderer, _texture, NULL, NULL);
+    SDL_RenderPresent(_renderer);
 }
 
 void SDLStub::processEvents() {
@@ -292,11 +301,11 @@ uint32_t SDLStub::getOutputSampleRate() {
 }
 
 void *SDLStub::addTimer(uint32_t delay, TimerCallback callback, void *param) {
-	return SDL_AddTimer(delay, (SDL_NewTimerCallback)callback, param);
+	//return SDL_AddTimer(delay, (SDL_NewTimerCallback)callback, param);
 }
 
 void SDLStub::removeTimer(void *timerId) {
-	SDL_RemoveTimer((SDL_TimerID)timerId);
+	//SDL_RemoveTimer((SDL_TimerID)timerId);
 }
 
 void *SDLStub::createMutex() {
@@ -318,11 +327,17 @@ void SDLStub::unlockMutex(void *mutex) {
 void SDLStub::prepareGfxMode() {
 	int w = SCREEN_W * _scalers[_scaler].factor;
 	int h = SCREEN_H * _scalers[_scaler].factor;
-	_screen = SDL_SetVideoMode(w, h, 16, _fullscreen ? (SDL_FULLSCREEN | SDL_HWSURFACE) : SDL_HWSURFACE);
+	//_screen = SDL_SetVideoMode(w, h, 16, _fullscreen ? (SDL_FULLSCREEN | SDL_HWSURFACE) : SDL_HWSURFACE);
+	_window = SDL_CreateWindow("Another World", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_SHOWN); //SDL_WINDOW_FULLSCREEN
+	_renderer = SDL_CreateRenderer(_window, -1, 0);
+    _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, w, h);
+	_screen = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+
 	if (!_screen) {
 		error("SDLStub::prepareGfxMode() unable to allocate _screen buffer");
 	}
-	_sclscreen = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 16,
+
+	_sclscreen = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 32,
 						_screen->format->Rmask,
 						_screen->format->Gmask,
 						_screen->format->Bmask,
