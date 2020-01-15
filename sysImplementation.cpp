@@ -140,10 +140,12 @@ void SDLStub::copyRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 	buf += y * pitch + x;
 	uint16_t *p = (uint16_t *)_offscreen;
 
+	//printf("buf: %d\n", sizeof(buf));
+
 	//For each line
 	while (height--) {
 		//One byte gives us two pixels, we only need to iterate w/2 times.
-		for (int i = 0; i < width / 2; ++i) {
+		for (int i = 0; i < width / 2; ++i) { //width = 320 so divided by 2 is 160
 
 			//Extract two palette indices from upper byte and lower byte.
 			uint8_t p1 = *(buf + i) >> 4;
@@ -159,7 +161,8 @@ void SDLStub::copyRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 	}
 
 	SDL_LockSurface(_sclscreen);
-	//printf("pitch: %d\n", _sclscreen->pitch);
+	//printf("pitch: %d\n", _sclscreen->pitch); //640, why? Pitch = length of a row of pixels in bytes. 16 bits = 2 bytes per pixel so 320 pixels X 2 bytes = 640
+	//printf("SCREEN_H: %d\n", SCREEN_H);
 	(this->*_scalers[_scaler].proc)((uint16_t *)_sclscreen->pixels, _sclscreen->pitch, (uint16_t *)_offscreen, SCREEN_W, SCREEN_W, SCREEN_H);
 	SDL_UnlockSurface(_sclscreen);
 	SDL_BlitSurface(_sclscreen, NULL, _screen, NULL);
@@ -368,9 +371,10 @@ void SDLStub::switchGfxMode(bool fullscreen, uint8_t scaler) {
 }
 
 void SDLStub::point1_tx(uint16_t *dst, uint16_t dstPitch, const uint16_t *src, uint16_t srcPitch, uint16_t w, uint16_t h) {
-	dstPitch >>= 1;
-	while (h--) {
-		memcpy(dst, src, w * 2);
+	dstPitch >>= 1; //divides by 2, so 640 / 2, dstPitch = 320
+	//printf("dstPitch: %d, w: %d, h: %d\n", dstPitch, w, h);
+	while (h--) { //h = 200
+		memcpy(dst, src, w * 2); //dst = _sclscreen->pixels, src = _offscreen, 320 * 2 = 640
 		dst += dstPitch;
 		src += dstPitch;
 	}
