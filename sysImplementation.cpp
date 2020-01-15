@@ -82,11 +82,11 @@ struct SDLStub : System {
 };
 
 const SDLStub::Scaler SDLStub::_scalers[] = {
-	{ "Point1_tx", &SDLStub::point1_tx, 1 },
-	{ "Point2_tx", &SDLStub::point2_tx, 2 },
-	{ "Scale2x", &SDLStub::scale2x, 2 },
-	{ "Point3_tx", &SDLStub::point3_tx, 3 },
-	{ "Scale3x", &SDLStub::scale3x, 3 }
+	{ "Point1_tx", &SDLStub::point1_tx, 1 }, // 0 works but quarter the screen
+	{ "Point2_tx", &SDLStub::point2_tx, 2 }, // 1 works but half the screen
+	{ "Scale2x", &SDLStub::scale2x, 2 },     // 2 don't work
+	{ "Point3_tx", &SDLStub::point3_tx, 3 }, // 3 works
+	{ "Scale3x", &SDLStub::scale3x, 3 }      // 4 works
 };
 
 
@@ -100,7 +100,7 @@ void SDLStub::init(const char *title) {
 	int x, y; 
 
 	SDL_GetMouseState( &x,&y ); 
-	SDL_ShowCursor( SDL_ENABLE ); 
+	//SDL_ShowCursor( SDL_ENABLE ); 
 	//SDL_WarpMouse( x, y ); 
 
 	memset(&input, 0, sizeof(input));
@@ -109,7 +109,7 @@ void SDLStub::init(const char *title) {
 		error("Unable to allocate offscreen buffer");
 	}
 	_fullscreen = false;
-	_scaler = 1;
+	_scaler = 0;
 	prepareGfxMode();
 }
 
@@ -142,7 +142,6 @@ void SDLStub::copyRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 
 	//For each line
 	while (height--) {
-
 		//One byte gives us two pixels, we only need to iterate w/2 times.
 		for (int i = 0; i < width / 2; ++i) {
 
@@ -153,7 +152,6 @@ void SDLStub::copyRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 			//Get the pixel value from the palette and write in in offScreen.
 			*(p + i * 2 + 0) = palette[p1];
 			*(p + i * 2 + 1) = palette[p2];
-
 		}
 
 		p += SCREEN_W;
@@ -161,6 +159,7 @@ void SDLStub::copyRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 	}
 
 	SDL_LockSurface(_sclscreen);
+	//printf("pitch: %d\n", _sclscreen->pitch);
 	(this->*_scalers[_scaler].proc)((uint16_t *)_sclscreen->pixels, _sclscreen->pitch, (uint16_t *)_offscreen, SCREEN_W, SCREEN_W, SCREEN_H);
 	SDL_UnlockSurface(_sclscreen);
 	SDL_BlitSurface(_sclscreen, NULL, _screen, NULL);
@@ -327,21 +326,17 @@ void SDLStub::unlockMutex(void *mutex) {
 void SDLStub::prepareGfxMode() {
 	int w = SCREEN_W * _scalers[_scaler].factor;
 	int h = SCREEN_H * _scalers[_scaler].factor;
-	//_screen = SDL_SetVideoMode(w, h, 16, _fullscreen ? (SDL_FULLSCREEN | SDL_HWSURFACE) : SDL_HWSURFACE);
+
 	_window = SDL_CreateWindow("Another World", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_SHOWN); //SDL_WINDOW_FULLSCREEN
 	_renderer = SDL_CreateRenderer(_window, -1, 0);
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, w, h);
-	_screen = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+	_screen    = SDL_CreateRGBSurface(0, w, h, 16, 0, 0, 0, 0);
+	_sclscreen = SDL_CreateRGBSurface(0, w, h, 16, 0, 0, 0, 0);
 
 	if (!_screen) {
 		error("SDLStub::prepareGfxMode() unable to allocate _screen buffer");
 	}
-
-	_sclscreen = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 32,
-						_screen->format->Rmask,
-						_screen->format->Gmask,
-						_screen->format->Bmask,
-						_screen->format->Amask);
+	
 	if (!_sclscreen) {
 		error("SDLStub::prepareGfxMode() unable to allocate _sclscreen buffer");
 	}
