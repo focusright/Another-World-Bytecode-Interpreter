@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <SDL.h>
+#include <SDL2/SDL.h>
 #include "sys.h"
 #include "util.h"
 
@@ -332,7 +332,7 @@ void SDLStub::prepareGfxMode() {
 
 	_window = SDL_CreateWindow("Another World", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_SHOWN); //SDL_WINDOW_FULLSCREEN
 	_renderer = SDL_CreateRenderer(_window, -1, 0);
-    _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, w, h);
+    _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, w, h);
 	_screen    = SDL_CreateRGBSurface(0, w, h, 16, 0, 0, 0, 0);
 	_sclscreen = SDL_CreateRGBSurface(0, w, h, 16, 0, 0, 0, 0);
 
