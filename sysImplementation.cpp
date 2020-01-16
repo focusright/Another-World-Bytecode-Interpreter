@@ -43,7 +43,6 @@ struct SDLStub : System {
 	SDL_Texture * _texture;
 
 	uint8_t *_offscreen;
-	SDL_Surface *_screen;
 	SDL_Surface *_sclscreen;
 	bool _fullscreen;
 	uint8_t _scaler;
@@ -109,7 +108,7 @@ void SDLStub::init(const char *title) {
 		error("Unable to allocate offscreen buffer");
 	}
 	_fullscreen = false;
-	_scaler = 0;
+	_scaler = 1;
 	prepareGfxMode();
 }
 
@@ -130,7 +129,7 @@ void SDLStub::setPalette(uint8_t start, uint8_t numEnties, const uint8_t *buf) {
 			c[j] =  (col << 2) | (col & 3);
 		}
 
-		palette[i] = SDL_MapRGB(_screen->format, c[0], c[1], c[2]);
+		palette[i] = SDL_MapRGB(_sclscreen->format, c[0], c[1], c[2]);
 	}
 
 }
@@ -165,10 +164,7 @@ void SDLStub::copyRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height, 
 	//printf("SCREEN_H: %d\n", SCREEN_H);
 	(this->*_scalers[_scaler].proc)((uint16_t *)_sclscreen->pixels, _sclscreen->pitch, (uint16_t *)_offscreen, SCREEN_W, SCREEN_W, SCREEN_H);
 	SDL_UnlockSurface(_sclscreen);
-	SDL_BlitSurface(_sclscreen, NULL, _screen, NULL);
-	//SDL_UpdateRect(_screen, 0, 0, 0, 0);
-
-    SDL_UpdateTexture(_texture, NULL, _screen->pixels, _screen->pitch);
+    SDL_UpdateTexture(_texture, NULL, _sclscreen->pixels, _sclscreen->pitch);
     SDL_RenderClear(_renderer);
     SDL_RenderCopy(_renderer, _texture, NULL, NULL);
     SDL_RenderPresent(_renderer);
@@ -333,12 +329,7 @@ void SDLStub::prepareGfxMode() {
 	_window = SDL_CreateWindow("Another World", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_SHOWN); //SDL_WINDOW_FULLSCREEN
 	_renderer = SDL_CreateRenderer(_window, -1, 0);
     _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, w, h);
-	_screen    = SDL_CreateRGBSurface(0, w, h, 16, 0, 0, 0, 0);
 	_sclscreen = SDL_CreateRGBSurface(0, w, h, 16, 0, 0, 0, 0);
-
-	if (!_screen) {
-		error("SDLStub::prepareGfxMode() unable to allocate _screen buffer");
-	}
 	
 	if (!_sclscreen) {
 		error("SDLStub::prepareGfxMode() unable to allocate _sclscreen buffer");
@@ -354,15 +345,10 @@ void SDLStub::cleanupGfxMode() {
 		SDL_FreeSurface(_sclscreen);
 		_sclscreen = 0;
 	}
-	if (_screen) {
-		SDL_FreeSurface(_screen);
-		_screen = 0;
-	}
 }
 
 void SDLStub::switchGfxMode(bool fullscreen, uint8_t scaler) {
 	SDL_Surface *prev_sclscreen = _sclscreen;
-	SDL_FreeSurface(_screen); 	
 	_fullscreen = fullscreen;
 	_scaler = scaler;
 	prepareGfxMode();
