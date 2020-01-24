@@ -37,6 +37,14 @@ void VirtualMachine::init() {
 	vmVariables[0x54] = 0x81;
 	vmVariables[VM_VARIABLE_RANDOM_SEED] = time(0);
 
+#ifndef BYPASS_PROTECTION
+	vmVariables[0xBC] = 0x10;
+	vmVariables[0xC6] = 0x80;
+	vmVariables[0xF2] = 4000;
+	vmVariables[0xDC] = 33;
+	vmVariables[0xE4] = 20;
+#endif
+
 	_fastMode = false;
 	player->_markVar = &vmVariables[VM_VARIABLE_MUS_MARK];
 }
@@ -132,7 +140,6 @@ void VirtualMachine::op_jnz() {
 	}
 }
 
-#define BYPASS_PROTECTION
 void VirtualMachine::op_condJmp() {
 	
 	//printf("Jump : %X \n",_scriptPtr.pc-res->segBytecode);

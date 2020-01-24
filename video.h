@@ -31,7 +31,7 @@ struct Polygon {
 		MAX_POINTS = 50
 	};
 
-	uint16_t bbw, bbh;
+	uint16_t bbw, bbh; //bb = background buffer
 	uint8_t numPoints;
 	Point points[MAX_POINTS];
 
